@@ -1,10 +1,8 @@
 import time
-from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from xpath.musinsa import musinsa_xpath as xpath
-from selenium.webdriver.common.action_chains import ActionChains
+from xpath.xpath import musinsa_xpath as xpath
 from datetime import date
 import pandas as pd
 
@@ -25,10 +23,7 @@ class Webdriver:
 
 class Musinsa():
     def __init__(self):
-        self.time = date.today().isoformat()
         self.driver = Webdriver().driver
-        # self.link_csv_name = f"musinsa_link_{self.time}"
-        # self.finish_csv_name = f"musinsa_{self.time}"
         self.url = 'https://www.musinsa.com/app/?skip_bf=Y'
 
     def link_crawling(self):
@@ -76,18 +71,21 @@ class Musinsa():
             # print(href)
             urls_list.append(href)
 
+        # 제목의 경우 빈값이 나오는 경우가 있어서 빈값 제거
         titles_list = list(filter(None, titles_list))
+        # 2페이지까지 크롤링 하고 100개만 사용
         titles_list = titles_list[:100]
         urls_list = urls_list[:100]
         # for i in range(len(titles_list)):
         #     print(f"{i}번쨰 : {titles_list[i]}")
         print("전체 상품수 : ", len(titles_list))
-        print("전체 링크수 : " ,len(urls_list))
+        print("전체 링크수 : ", len(urls_list))
 
         url_df = pd.DataFrame({'title': titles_list, 'url': urls_list})
         # print(url_df)
         # url_df.to_csv(f'{self.link_csv_name}.csv', encoding='utf-8')
-        # print("link_크롤링 완료 및 저장")
+        Saving.save_csv(url_df)
+        print("link_크롤링 완료 및 저장")
         self.driver.close()
 
         return url_df
@@ -98,8 +96,8 @@ class Musinsa():
         # print(url_list)
 
         result_list = []
-        for i in range(len(url_list)):
-        # for i in range(2):  # 테스트용
+        # for i in range(url_list):
+        for i in range(2):  # 테스트용
             url = url_df[i]
             self.driver.get(url)
             self.driver.implicitly_wait(15)
@@ -111,8 +109,8 @@ class Musinsa():
             p = 4
             temp_list = []
             time.sleep(1)
-            for i in range(pages_num):
-            # for i in range(2):    ##테스트용
+            # for i in range(pages_num):
+            for i in range(2):    ##테스트용
                 # 한페이지에 10개씩 리뷰가 등장
                 for j in range(1, 11):
                     review_xpath = f'//*[@id = "reviewListFragment"] / div[{j}] / div[4] / div[1]'
@@ -145,28 +143,32 @@ class Musinsa():
 
 class Saving():
     def __init__(self):
+        self.time = date.today().isoformat()
         self.link_csv_name = f"musinsa_link_{self.time}"
         self.finish_csv_name = f"musinsa_{self.time}"
 
-    def save_csv(self, df):
-        if len(df) < 3:
-            df.to_csv(f'{self.link_csv_name}.csv', encoding='utf-8')
+    def save_csv(self, result_df):
+        df = result_df
+        # 칼럼 길이가 3개 미만일시에 url 수집으로 판단
+        if len(df) <= 2:
+            df.to_csv(f'./files/{self.link_csv_name}.csv', encoding='utf-8')
         else:
-            df.to_csv(f'{self.finish_csv_name}', encoding='utf-8')
+            df.to_csv(f'./files/{self.finish_csv_name}.csv', encoding='utf-8')
+        return df
 
     def csv_merge(self, df, result):
         # 크롤링 결과를 dataframe 변경 후 기존 datafream과 병합
         result_df = pd.merge(df, result, left_index=True, right_index=True, how='left')
         print(result_df)
         # result.to_csv(f'{self.finish_csv_name}', encoding='utf-8')
-        Saving.save_csv(result_df)
+        self.save_csv(result_df)
         print("csv 저장 완료")
 
 
 if __name__=="__main__":
     musinsa = Musinsa()
     save = Saving()
-    # first_df = musinsa.link_crawling()
-    first_df = pd.read_csv('musinsa_link_2022-07-20.csv', index_col=0)
+    # first_df = musinsa.link_crawling()    # url 수집 파일이 없을시
+    first_df = pd.read_csv('./files/musinsa_link_2022-07-20.csv', index_col=0) # url 수집 파일이 있을시
     result_df = musinsa.main_crawling(first_df)
     save.csv_merge(first_df, result_df)
