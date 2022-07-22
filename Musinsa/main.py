@@ -17,7 +17,8 @@ class Webdriver:
         options.add_argument("--disable-gpu")  # GUI를 사용할 수 없는 환경에서 설정. linux, docker 등
         # options.add_argument(f"--window-size={1200, 700}")
         options.add_argument('Content-Type=application/json; charset=utf-8')
-        options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Safari/605.1.15")
+        options.add_argument(
+            "user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Safari/605.1.15")
         self.driver = webdriver.Chrome(executable_path=path, options=options)
         self.driver.set_window_size(1600, 1600)
         self.driver.implicitly_wait(3)  # 웹 자원 로드 위해 3초 대기
@@ -97,11 +98,11 @@ class Musinsa():
         url_list = len(url_df)
         # print(url_list)
 
-        result_list = []    # 상품별 리뷰를 담아둘 리스트
-        # for i in range(url_list):
-        for i in range(2):  # 테스트용
+        result_list = []  # 상품별 리뷰를 담아둘 리스트
+        for i in range(url_list):
+        # for i in range(2):  # 테스트용
             url = url_df[i]
-            self.driver.get(url)    # 무신사 리뷰중 스타일 후기 리뷰를 크롤링
+            self.driver.get(url)  # 무신사 리뷰중 스타일 후기 리뷰를 크롤링
             self.driver.implicitly_wait(15)
             time.sleep(1)
 
@@ -111,11 +112,11 @@ class Musinsa():
             pages_num = int(page.replace(" ", ''))
             print(f"전체 리뷰 페이지 수 : {pages_num}")
 
-            p = 4   # 페이지 버튼 클릭을 위한 값
-            temp_list = []   # 각 페이지 별 리뷰를 담아둘 임시 리스트
+            p = 4  # 페이지 버튼 클릭을 위한 값
+            temp_list = []  # 각 페이지 별 리뷰를 담아둘 임시 리스트
             time.sleep(1)
-            # for i in range(pages_num):
-            for i in range(5):    ##테스트용
+            for i in range(pages_num):
+            # for i in range(5):    ##테스트용
                 # BeautifulSoup을 이용한 크롤링
                 html = self.driver.page_source
                 soup = BeautifulSoup(html, 'html.parser')
@@ -125,7 +126,7 @@ class Musinsa():
                     # print("review\n", review)
                     # findAll의 경우 text를 바로 뽑을수 없어서 반복문을 사용
                     for texts in review:
-                        review = texts.text # str 형태로 가져옴
+                        review = texts.text  # str 형태로 가져옴
                         temp_list.append(review)
                     # print("temp_list\n", temp_list)
                 else:
@@ -191,10 +192,10 @@ class Saving():
         print("csv 저장 완료")
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     musinsa = Musinsa()
     save = Saving()
-    # first_df = musinsa.link_crawling()    # url 수집 파일이 없을시
-    first_df = pd.read_csv('./files/musinsa_link_2022-07-20.csv', index_col=0)[:2] # url 수집 파일이 있을시
+    first_df = musinsa.link_crawling()  # url 수집 파일이 없을시
+    # first_df = pd.read_csv('./files/musinsa_link_2022-07-20.csv', index_col=0) # url 수집 파일이 있을시
     result_df = musinsa.main_crawling(first_df)
     save.csv_merge(first_df, result_df)
