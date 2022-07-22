@@ -1,10 +1,12 @@
-import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from xpath.xpath import musinsa_xpath as xpath
+from Musinsa.xpath import musinsa_xpath as xpath
 from datetime import date
+from bs4 import BeautifulSoup
 import pandas as pd
+import time
+import re
 
 
 class Webdriver:
@@ -95,22 +97,43 @@ class Musinsa():
         url_list = len(url_df)
         # print(url_list)
 
-        result_list = []
+        result_list = []    # 상품별 리뷰를 담아둘 리스트
         # for i in range(url_list):
         for i in range(2):  # 테스트용
             url = url_df[i]
-            self.driver.get(url)
+            self.driver.get(url)    # 무신사 리뷰중 스타일 후기 리뷰를 크롤링
             self.driver.implicitly_wait(15)
+            time.sleep(1)
 
-            # 리뷰의 페이지 확인
+            # 리뷰의 전체 페이지 수 확인
             all_page_xpath = '//*[@id="reviewListFragment"]/div[11]/div[1]'
             page = self.driver.find_element(By.XPATH, all_page_xpath).text[:4]
             pages_num = int(page.replace(" ", ''))
-            p = 4
-            temp_list = []
+            print(f"전체 리뷰 페이지 수 : {pages_num}")
+
+            p = 4   # 페이지 버튼 클릭을 위한 값
+            temp_list = []   # 각 페이지 별 리뷰를 담아둘 임시 리스트
             time.sleep(1)
             # for i in range(pages_num):
-            for i in range(2):    ##테스트용
+            for i in range(5):    ##테스트용
+                # BeautifulSoup을 이용한 크롤링
+                html = self.driver.page_source
+                soup = BeautifulSoup(html, 'html.parser')
+                self.driver.implicitly_wait(10)
+                if soup.find_all("div", class_="review-contents__text"):
+                    review = soup.findAll("div", class_="review-contents__text")
+                    # print("review\n", review)
+                    # findAll의 경우 text를 바로 뽑을수 없어서 반복문을 사용
+                    for texts in review:
+                        review = texts.text # str 형태로 가져옴
+                        temp_list.append(review)
+                    # print("temp_list\n", temp_list)
+                else:
+                    print("ERROR 해당 페이지에서 상품 리뷰를 찾지 못함")
+                    pass
+
+                """""
+                # 셀레니움을 이용한 크롤링
                 # 한페이지에 10개씩 리뷰가 등장
                 for j in range(1, 11):
                     review_xpath = f'//*[@id = "reviewListFragment"] / div[{j}] / div[4] / div[1]'
@@ -118,6 +141,8 @@ class Musinsa():
                     review = self.driver.find_element(By.XPATH, review_xpath).text
                     temp_list.append(review)
                     # print(review)
+                """""
+
                 # print("기존 p넘버 : ", p)
                 page_xpath = f'//*[@id="reviewListFragment"]/div[11]/div[2]/div/a[{p}]'
                 if self.driver.find_element(By.XPATH, page_xpath):
@@ -131,6 +156,7 @@ class Musinsa():
                         p = 4
                         # print("p넘버 초기화: ", p)
                 else:
+                    print("리뷰 페이지 끝")
                     pass
                 print(f"temp_lsit :  {len(temp_list)}\n")
             result_list.append(temp_list)
@@ -169,6 +195,6 @@ if __name__=="__main__":
     musinsa = Musinsa()
     save = Saving()
     # first_df = musinsa.link_crawling()    # url 수집 파일이 없을시
-    first_df = pd.read_csv('./files/musinsa_link_2022-07-20.csv', index_col=0) # url 수집 파일이 있을시
+    first_df = pd.read_csv('./files/musinsa_link_2022-07-20.csv', index_col=0)[:2] # url 수집 파일이 있을시
     result_df = musinsa.main_crawling(first_df)
     save.csv_merge(first_df, result_df)
