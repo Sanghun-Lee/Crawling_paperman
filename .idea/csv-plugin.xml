@@ -17,6 +17,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/files/musinsa_2022-07-25.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/files/musinsa_2022-07-26.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/files/musinsa_link_2022-07-20.csv">
           <value>
             <Attribute>
@@ -24,7 +38,7 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="/files/musinsa_link_2022-07-22.csv">
+        <entry key="/files/musinsa_link_2022-07-26.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

@@ -4,6 +4,7 @@ from selenium.webdriver.common.by import By
 from Musinsa.xpath import musinsa_xpath as xpath
 from datetime import date
 from bs4 import BeautifulSoup
+import os
 import pandas as pd
 import time
 import re
@@ -13,9 +14,11 @@ class Webdriver:
     def __init__(self):
         path = '/Applications/chromedriver'
         options = Options()
+        # options.add_argument('headless')    # 창 띄우지 않고 진행
         options.add_argument("--no-sandbox")  # GUI를 사용할 수 없는 환경에서 설정. linux, docker 등
         options.add_argument("--disable-gpu")  # GUI를 사용할 수 없는 환경에서 설정. linux, docker 등
-        # options.add_argument(f"--window-size={1200, 700}")
+        options.add_argument(f"--window-size={1600, 1600}")
+        options.add_argument("--blink-setting=imagesEnable=false")  # 이미지 로딩 안함
         options.add_argument('Content-Type=application/json; charset=utf-8')
         options.add_argument(
             "user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Safari/605.1.15")
@@ -31,9 +34,9 @@ class Musinsa():
 
     def link_crawling(self):
         self.driver.get(self.url)
-        self.driver.implicitly_wait(20)
+        self.driver.implicitly_wait(15)
         self.driver.find_element(By.XPATH, xpath.ranking_xpath).click()
-        # time.sleep(1)
+        # today.sleep(1)
         self.driver.find_element(By.XPATH, xpath.daily_xpath).click()
         self.driver.implicitly_wait(15)
         time.sleep(1)
@@ -86,10 +89,9 @@ class Musinsa():
 
         url_df = pd.DataFrame({'title': titles_list, 'url': urls_list})
         # print(url_df)
-        # url_df.to_csv(f'{self.link_csv_name}.csv', encoding='utf-8')
         Saving.save_csv(url_df)
         print("link_크롤링 완료 및 저장")
-        self.driver.close()
+        # self.driver.close()
 
         return url_df
 
@@ -99,24 +101,35 @@ class Musinsa():
         # print(url_list)
 
         result_list = []  # 상품별 리뷰를 담아둘 리스트
-        for i in range(url_list):
-        # for i in range(2):  # 테스트용
+        # for i in range(url_list):
+        for i in range(2):  # 테스트용
             url = url_df[i]
             self.driver.get(url)  # 무신사 리뷰중 스타일 후기 리뷰를 크롤링
+            self.driver.implicitly_wait(15)
+
+            # 이벤트 배너 생성시 닫기 클릭
+            event_popup = '/html/body/div[15]/div[2]/button'
+            print(i)
+            if i < 1:
+                # if self.driver.find_element(By.XPATH, event_popup):
+                self.driver.find_element(By.XPATH, event_popup).click()
+                print("이벤트 팝업창 종료")
+            else:
+                print("이벤트 팝업창 없음")
+                pass
             self.driver.implicitly_wait(15)
             time.sleep(1)
 
             # 리뷰의 전체 페이지 수 확인
-            all_page_xpath = '//*[@id="reviewListFragment"]/div[11]/div[1]'
-            page = self.driver.find_element(By.XPATH, all_page_xpath).text[:4]
+            page = self.driver.find_element(By.XPATH, xpath.all_page_xpath).text[:4]
             pages_num = int(page.replace(" ", ''))
             print(f"전체 리뷰 페이지 수 : {pages_num}")
 
             p = 4  # 페이지 버튼 클릭을 위한 값
             temp_list = []  # 각 페이지 별 리뷰를 담아둘 임시 리스트
-            time.sleep(1)
-            for i in range(pages_num):
-            # for i in range(5):    ##테스트용
+            # today.sleep(1)
+            # for i in range(pages_num):
+            for i in range(3):  ##테스트용
                 # BeautifulSoup을 이용한 크롤링
                 html = self.driver.page_source
                 soup = BeautifulSoup(html, 'html.parser')
@@ -138,7 +151,7 @@ class Musinsa():
                 # 한페이지에 10개씩 리뷰가 등장
                 for j in range(1, 11):
                     review_xpath = f'//*[@id = "reviewListFragment"] / div[{j}] / div[4] / div[1]'
-                    time.sleep(0.4)
+                    today.sleep(0.4)
                     review = self.driver.find_element(By.XPATH, review_xpath).text
                     temp_list.append(review)
                     # print(review)
@@ -163,6 +176,7 @@ class Musinsa():
             result_list.append(temp_list)
         print(f"result_list :  {len(result_list)}\n")
         result = pd.DataFrame({'text': result_list})
+        print(result)
         self.driver.close()
 
         return result
@@ -177,7 +191,7 @@ class Saving():
     def save_csv(self, result_df):
         df = result_df
         # 칼럼 길이가 3개 미만일시에 url 수집으로 판단
-        if len(df) <= 2:
+        if len(df.columns) <= 2:
             df.to_csv(f'./files/{self.link_csv_name}.csv', encoding='utf-8')
         else:
             df.to_csv(f'./files/{self.finish_csv_name}.csv', encoding='utf-8')
@@ -192,10 +206,24 @@ class Saving():
         print("csv 저장 완료")
 
 
-if __name__ == "__main__":
+class main:
     musinsa = Musinsa()
     save = Saving()
-    first_df = musinsa.link_crawling()  # url 수집 파일이 없을시
-    # first_df = pd.read_csv('./files/musinsa_link_2022-07-20.csv', index_col=0) # url 수집 파일이 있을시
+    print("무신사 크롤링 시작")
+    start_time = time.time()
+    today = date.today().isoformat()
+    url_file = f'./files/musinsa_link_{today}.csv'
+    if os.path.isfile(url_file):
+        print('url 완료 파일 존재')
+        first_df = pd.read_csv(f'./files/musinsa_link_{today}.csv', index_col=0)
+    else:
+        print('url 수집 시작')
+        first_df = musinsa.link_crawling()  # url 수집 파일이 없을시
     result_df = musinsa.main_crawling(first_df)
     save.csv_merge(first_df, result_df)
+    print(f"무신사 크롤링 종료 \n 소요 시간 : {time.time() - start_time}")
+
+
+if __name__ == "__main__":
+    main
+
