@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from Musinsa.xpath import musinsa_xpath as xpath
+from xpath import musinsa_xpath as xpath
 from datetime import date
 from bs4 import BeautifulSoup
 import os
