@@ -90,7 +90,9 @@ class Musinsa():
 
         url_df = pd.DataFrame({'title': titles_list, 'url': urls_list})
         # print(url_df)
-        Saving.save_csv(url_df)
+        save_obj = Saving()
+        save_obj.save_csv(url_df)
+        # Saving.save_csv(url_df)
         print("link_크롤링 완료 및 저장")
         # self.driver.close()
 
