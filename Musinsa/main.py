@@ -12,7 +12,8 @@ import re
 
 class Webdriver:
     def __init__(self):
-        path = '/Applications/chromedriver'
+        # TODO 해당 path는 기기마다 다르기때문에, 추후 수정필요.
+        path = '/home/hun/Documents/chromeDriver/version103/chromedriver'
         options = Options()
         # options.add_argument('headless')    # 창 띄우지 않고 진행
         options.add_argument("--no-sandbox")  # GUI를 사용할 수 없는 환경에서 설정. linux, docker 등
